@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/expense.dart';
+import '../models/shopping_item.dart';
 
 
 class StorageService {
@@ -54,5 +55,40 @@ class StorageService {
 
   static Future<void> saveDarkMode(bool isDark) async {
     await _prefs.setBool(_keyDarkMode, isDark);
+  }
+  static const String _keyShoppingList = 'shopping_list_v1';
+
+  static List<ShoppingItem> getShoppingList() {
+    final raw = _prefs.getStringList(_keyShoppingList) ?? <String>[];
+    return raw.map((s) => ShoppingItem.fromJson(s)).toList();
+  }
+
+  static Future<void> saveShoppingList(List<ShoppingItem> list) async {
+    final raw = list.map((e) => e.toJson()).toList();
+    await _prefs.setStringList(_keyShoppingList, raw);
+  }
+
+  static Future<void> addShoppingItem(ShoppingItem item) async {
+    final list = getShoppingList();
+    list.add(item);
+    await saveShoppingList(list);
+  }
+
+  static Future<void> deleteShoppingItem(String id) async {
+    final list = getShoppingList();
+    list.removeWhere((x) => x.id == id);
+    await saveShoppingList(list);
+  }
+  // ... inside StorageService class ...
+
+  static const String _keyCurrency = 'currency_symbol_v1';
+
+  // Default to $ if nothing saved
+  static String getCurrency() {
+    return _prefs.getString(_keyCurrency) ?? '\$';
+  }
+
+  static Future<void> saveCurrency(String symbol) async {
+    await _prefs.setString(_keyCurrency, symbol);
   }
 }
