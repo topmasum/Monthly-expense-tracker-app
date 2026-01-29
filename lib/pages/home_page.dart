@@ -5,7 +5,7 @@ import '../services/storage_service.dart';
 import '../widgets/expense_card.dart';
 import 'tracker_page.dart';
 import 'shopping_list_page.dart';
-import '../utils/currency_helper.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
   final Function(bool) onThemeToggle;
@@ -23,7 +23,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Expense> _expenses = [];
+  List<Expense> _filteredExpenses = []; // 1. Holds the search results
   int _currentIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -34,6 +36,44 @@ class _HomePageState extends State<HomePage> {
   void _loadExpenses() {
     setState(() {
       _expenses = StorageService.getAllExpenses();
+      _filteredExpenses = _expenses; // 2. Initially show everything
+    });
+  }
+
+  // 3. THE SMART SEARCH LOGIC
+// 3. THE SMART SEARCH LOGIC
+  void _runFilter(String enteredKeyword) {
+    List<Expense> results = [];
+    if (enteredKeyword.isEmpty) {
+      // If search is empty, show all
+      results = _expenses;
+    } else {
+      results = _expenses.where((expense) {
+        final query = enteredKeyword.toLowerCase();
+
+        // 1. Match Name? (e.g. "Pizza")
+        final nameMatches = expense.name.toLowerCase().contains(query);
+
+        // 2. Match Category? (e.g. "Food")
+        final categoryMatches = expense.category.name.toLowerCase().contains(query);
+
+        // 3. Match Amount? (e.g. "500")
+        final amountMatches = expense.amount.toString().contains(query);
+
+        // 4. Match Date? (e.g. "Jan", "29", "Wednesday")
+        final dateFormatted = DateFormat('MMM d EEEE yyyy').format(expense.date).toLowerCase();
+        final dateMatches = dateFormatted.contains(query);
+
+        // 5. NEW: Match Payment Method? (e.g. "Cash", "Card", "Online")
+        final paymentMatches = expense.paymentMethod.name.toLowerCase().contains(query);
+
+        return nameMatches || categoryMatches || amountMatches || dateMatches || paymentMatches;
+      }).toList();
+    }
+
+    // Refresh the UI
+    setState(() {
+      _filteredExpenses = results;
     });
   }
 
@@ -228,7 +268,9 @@ class _HomePageState extends State<HomePage> {
                       existing.amount = amount;
                       existing.date = selectedDate; // Use user-selected date
                       existing.category = selectedCategory;
+                      existing.paymentMethod = selectedPayment;
                       await StorageService.updateExpense(existing);
+
                     }
 
                     if (ctx.mounted) Navigator.pop(ctx);
@@ -273,48 +315,103 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildExpensesList() {
-    final sorted = [..._expenses]..sort((a, b) => b.date.compareTo(a.date));
+    // Sort results by date (newest first)
+    final sorted = [..._filteredExpenses]..sort((a, b) => b.date.compareTo(a.date));
 
-    if (sorted.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.account_balance_wallet_outlined,
-                size: 80, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No expenses yet',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.grey[600],
+    return Column(
+      children: [
+        // A. PROFESSIONAL SEARCH BAR
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Container(
+            // 1. The Decoration (Shadow & Background)
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor, // Adapts to light/dark mode background
+              borderRadius: BorderRadius.circular(16), // Modern soft corners
+              boxShadow: [
+                BoxShadow(
+                  // Subtler shadow in dark mode, softer one in light mode
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black.withOpacity(0.2)
+                      : Colors.grey.withOpacity(0.15),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5), // Pushes shadow down slightly
+                ),
+              ],
+            ),
+            // 2. The Input Field itself
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) => _runFilter(value),
+              textAlignVertical: TextAlignVertical.center, // Centers text vertically with icons
+              decoration: InputDecoration(
+                hintText: 'Search name, category, date...',
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Icon(
+                    Icons.search,
+                    // FIX: Use light grey in Dark Mode, dark grey in Light Mode
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
+                ),
+                // Clear button logic handles itself
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.grey),
+                  onPressed: () {
+                    _searchController.clear();
+                    _runFilter('');
+                    FocusScope.of(context).unfocus();
+                  },
+                )
+                    : null,
+                border: InputBorder.none, // Important: removes the default underline/outline
+                contentPadding: const EdgeInsets.symmetric(vertical: 16), // Adjust height
               ),
             ),
-          ],
+          ),
         ),
-      );
-    }
 
-    return ListView.builder(
-      // --- THE FIX IS HERE ---
-      // We keep 12px padding on Top/Left/Right,
-      // but add 80px to Bottom to clear the FloatingActionButton.
-      padding: const EdgeInsets.only(
-        top: 12,
-        left: 12,
-        right: 12,
-        bottom: 80,
-      ),
-      itemCount: sorted.length,
-      itemBuilder: (_, index) {
-        final e = sorted[index];
-        return ExpenseCard(
-          expense: e,
-          onEdit: () => _addOrEditExpense(existing: e),
-          onDelete: () => _deleteExpense(e.id),
-        );
-      },
+        // B. THE LIST
+        Expanded(
+          child: sorted.isEmpty
+              ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off, size: 60, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  _searchController.text.isEmpty
+                      ? 'No expenses yet'
+                      : 'No results found',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          )
+              : ListView.builder(
+            padding: const EdgeInsets.only(top: 8, left: 12, right: 12, bottom: 80),
+            itemCount: sorted.length,
+            itemBuilder: (_, index) {
+              final e = sorted[index];
+              return ExpenseCard(
+                expense: e,
+                onEdit: () => _addOrEditExpense(existing: e),
+                onDelete: () => _deleteExpense(e.id),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
+
+// ... (Keep your build() method, but make sure it calls _buildExpensesList()) ...
+
 
   @override
   Widget build(BuildContext context) {
@@ -327,14 +424,60 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pocket Planner'),
+        // 1. Professional Background
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 3.0, // Shows a subtle shadow ONLY when scrolling
+        surfaceTintColor: Colors.transparent, // Removes the default purple tint of Material 3
+
+        // 2. Title + Date Subtitle
         centerTitle: true,
+        title: Column(
+          children: [
+            Text(
+              'Pocket Planner',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800, // Extra Bold
+                letterSpacing: -0.5, // Tighter spacing looks modern
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              DateFormat('EEEE, MMM d').format(DateTime.now()).toUpperCase(),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[500],
+                letterSpacing: 1.5, // Wide spacing for the subtitle
+              ),
+            ),
+          ],
+        ),
+
+        // 3. Encapsulated Settings Button
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined), // Modern outline icon
-            onPressed: _showSettingsPanel, // Opens the new pro panel
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.1) // Subtle light circle in Dark Mode
+                  : Colors.grey[200],             // Subtle grey circle in Light Mode
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.settings_outlined,
+                size: 20,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black87,
+              ),
+              onPressed: _showSettingsPanel,
+              tooltip: "Settings",
+            ),
           ),
-          const SizedBox(width: 8), // Little padding at the end
         ],
       ),
       body: pages[_currentIndex],

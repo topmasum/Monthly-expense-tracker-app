@@ -37,7 +37,7 @@ class ExpenseCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
 
-            // 2. Name & Details (Middle - Takes available space)
+            // 2. Name & Details (Middle)
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,20 +53,23 @@ class ExpenseCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
 
-                  // Subtitle Row: Category • Date ... Payment Method
+                  // Subtitle Row: Date | Payment Method
                   Row(
                     children: [
-                      // Category Dot
-                      Icon(Icons.circle, size: 6, color: color.withOpacity(0.5)),
-                      const SizedBox(width: 6),
-
-                      // Category Name & Date
+                      // Date
                       Text(
-                        "${expense.category.name.toUpperCase()} • ${DateFormat.MMMd().format(expense.date)}",
+                        DateFormat.MMMd().format(expense.date),
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
 
-                      const Spacer(), // Pushes payment info to the right edge of this block
+                      // Separator
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Text(
+                          "|",
+                          style: TextStyle(fontSize: 12, color: Colors.grey[300]),
+                        ),
+                      ),
 
                       // Payment Method Icon
                       Icon(
@@ -87,9 +90,9 @@ class ExpenseCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(width: 12), // Extra breathing room before amount
+            const SizedBox(width: 12),
 
-            // 3. Amount & Actions (Right Side - Stacked Vertically)
+            // 3. Amount & Actions (Right Side)
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -110,7 +113,7 @@ class ExpenseCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
 
-                // Action Buttons Row
+                // Action Buttons
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -167,7 +170,6 @@ class ExpenseCard extends StatelessWidget {
     }
   }
 
-  // New Helpers for Payment Method
   IconData _getPaymentIcon(PaymentMethod p) {
     switch (p) {
       case PaymentMethod.cash: return Icons.money;
