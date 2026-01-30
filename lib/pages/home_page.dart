@@ -6,6 +6,7 @@ import '../widgets/expense_card.dart';
 import 'tracker_page.dart';
 import 'shopping_list_page.dart';
 import 'package:intl/intl.dart';
+import '../services/receipt_scanner_service.dart';
 
 class HomePage extends StatefulWidget {
   final Function(bool) onThemeToggle;
@@ -85,9 +86,12 @@ class _HomePageState extends State<HomePage> {
     // Default category
     Category selectedCategory = existing?.category ?? Category.other;
 
-    // NEW: Default date (either existing date or Today)
+    // Default date (either existing date or Today)
     DateTime selectedDate = existing?.date ?? DateTime.now();
     PaymentMethod selectedPayment = existing?.paymentMethod ?? PaymentMethod.cash;
+
+    // NEW: Initialize the Scanner Service
+    final ReceiptScannerService scanner = ReceiptScannerService();
 
     await showModalBottomSheet(
       context: context,
@@ -104,10 +108,48 @@ class _HomePageState extends State<HomePage> {
               context: context,
               initialDate: selectedDate,
               firstDate: DateTime(2020),
-              lastDate: DateTime.now(), // Can't pick future dates for expenses
+              lastDate: DateTime.now(),
             );
             if (picked != null) {
               setModalState(() => selectedDate = picked);
+            }
+          }
+
+          // NEW: SCAN FUNCTION
+          Future<void> scanReceipt() async {
+            // 1. Show a loading indicator or toast if you want
+            try {
+              final result = await scanner.scanReceipt();
+
+              if (result.isNotEmpty) {
+                setModalState(() {
+                  // Auto-fill Amount
+                  if (result['amount'] != null) {
+                    amountController.text = result['amount'].toString();
+                  }
+                  // Auto-fill Date
+                  if (result['date'] != null) {
+                    selectedDate = result['date'];
+                  }
+                });
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Scanned: Found ${result['amount'] ?? 'no amount'}"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Could not read receipt. Try again.")),
+                  );
+                }
+              }
+            } catch (e) {
+              // Handle permission errors or cancellations
             }
           }
 
@@ -122,17 +164,44 @@ class _HomePageState extends State<HomePage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  existing == null ? 'Add New Expense' : 'Edit Expense',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
+                // HEADER ROW: Title + Scan Button
+// HEADER ROW: Title + Scan Button
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 1. TITLE (Wrapped in Expanded to prevent overlap)
+                    Expanded(
+                      child: Text(
+                        existing == null ? 'New Expense' : 'Edit Expense',
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis, // Adds "..." if screen is TINY
+                      ),
+                    ),
+
+                    // 2. COMPACT SCAN BUTTON
+                    if (existing == null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: FilledButton.tonalIcon(
+                          onPressed: scanReceipt,
+                          icon: const Icon(Icons.camera_alt, size: 16),
+                          label: const Text("Scan", style: TextStyle(fontWeight: FontWeight.bold)),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            visualDensity: VisualDensity.compact, // Makes button height smaller
+                            backgroundColor: Colors.blue.withOpacity(0.1),
+                            foregroundColor: Colors.blue,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 20),
 
                 // 1. NAME
                 TextField(
                   controller: nameController,
-                  autofocus: true,
+                  autofocus: existing == null, // Only autofocus if new
                   decoration: const InputDecoration(
                     labelText: 'Expense Name',
                     border: OutlineInputBorder(),
@@ -145,12 +214,9 @@ class _HomePageState extends State<HomePage> {
                 // 2. AMOUNT
                 TextField(
                   controller: amountController,
-                  // 1. Remove 'const' here
                   decoration: InputDecoration(
                     labelText: 'Amount',
-                    border: const OutlineInputBorder(), // You can move 'const' here if you want
-
-                    // This allows the currency to change dynamically
+                    border: const OutlineInputBorder(),
                     prefixIcon: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Text(
@@ -162,6 +228,8 @@ class _HomePageState extends State<HomePage> {
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 15),
+
+                // PAYMENT METHOD
                 const Text("Payment Method", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
                 const SizedBox(height: 8),
                 Row(
@@ -177,7 +245,7 @@ class _HomePageState extends State<HomePage> {
                 // 3. ROW: CATEGORY + DATE PICKER
                 Row(
                   children: [
-                    // Category Dropdown (Flexible width)
+                    // Category Dropdown
                     Expanded(
                       flex: 2,
                       child: DropdownButtonFormField<Category>(
@@ -187,7 +255,7 @@ class _HomePageState extends State<HomePage> {
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         ),
-                        isExpanded: true, // Prevents overflow
+                        isExpanded: true,
                         items: Category.values.map((cat) {
                           return DropdownMenuItem(
                             value: cat,
@@ -208,9 +276,9 @@ class _HomePageState extends State<HomePage> {
 
                     const SizedBox(width: 10),
 
-                    // NEW: DATE PICKER BUTTON
+                    // DATE PICKER BUTTON
                     Expanded(
-                      flex: 1, // Takes up 1/3 of the row
+                      flex: 1,
                       child: InkWell(
                         onTap: pickDate,
                         borderRadius: BorderRadius.circular(4),
@@ -258,7 +326,7 @@ class _HomePageState extends State<HomePage> {
                         id: id,
                         name: name,
                         amount: amount,
-                        date: selectedDate, // Use user-selected date
+                        date: selectedDate,
                         category: selectedCategory,
                         paymentMethod: selectedPayment,
                       );
@@ -266,11 +334,10 @@ class _HomePageState extends State<HomePage> {
                     } else {
                       existing.name = name;
                       existing.amount = amount;
-                      existing.date = selectedDate; // Use user-selected date
+                      existing.date = selectedDate;
                       existing.category = selectedCategory;
                       existing.paymentMethod = selectedPayment;
                       await StorageService.updateExpense(existing);
-
                     }
 
                     if (ctx.mounted) Navigator.pop(ctx);

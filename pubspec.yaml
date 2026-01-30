@@ -38,7 +38,10 @@ dependencies:
   fl_chart: ^1.1.1
   intl: ^0.20.2
   flutter_svg: ^2.2.3
-  flutter_slidable: ^4.0.3
+  image_picker: ^1.2.1
+  google_mlkit_text_recognition: ^0.15.0
+  showcaseview: ^5.0.1
+
 
 
 
@@ -56,10 +59,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/icon2.png"
+  image_path: "assets/images/icon_main2.png"
   min_sdk_android: 21 # Helps with newer Android versions
   adaptive_icon_background: "#ffffff" # Hex color of your background (Optional)
-  adaptive_icon_foreground: "assets/images/icon2.png" # Standard icon
+  adaptive_icon_foreground: "assets/images/icon_main2.png" # Standard icon
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
