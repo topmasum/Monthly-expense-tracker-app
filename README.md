@@ -4,40 +4,16 @@ A user-friendly personal finance management tool designed to track expenditures,
 
 ---
 
-### Application Preview
-<!-- Place your system screenshots, dashboard layouts, or UI modules below -->
-<table>
-  <tr>
-    <td><strong>Dashboard Interface</strong></td>
-    <td><strong>Analytics / Budget Analytics</strong></td>
-  </tr>
-  ---
-
-### Application Preview
-<table>
-  <tr>
-    <td width="50%" align="center">
-      <strong>Dashboard Overview</strong><br/><br/>
-      <img src="https://github.com/user-attachments/assets/b6bf9cc6-2003-482c-b4d5-a59ad5802166" alt="Dashboard" width="100%"/>
-    </td>
-    <td width="50%" align="center">
-      <strong>Analytics Panel</strong><br/><br/>
-      <img src="https://github.com/user-attachments/assets/322fb1a6-46cc-47ab-b42b-952b47a8c526" alt="Analytics" width="100%"/>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center">
-      <strong>Transaction Log</strong><br/><br/>
-      <img src="https://github.com/user-attachments/assets/12fb8876-a96b-4143-8a17-eb92754ac43a" alt="Transactions" width="100%"/>
-    </td>
-    <td width="50%" align="center">
-      <strong>Budget Configuration</strong><br/><br/>
-      <img src="https://github.com/user-attachments/assets/69cfbe63-f271-4014-a99e-2932f7f4fe2c" alt="Settings" width="100%"/>
-    </td>
-  </tr>
-</table>
-
 ---
+
+### Application Preview
+<table>
+  <tr>
+    <td width="25%"><img src="https://github.com/user-attachments/assets/b6bf9cc6-2003-482c-b4d5-a59ad5802166" alt="View 1" width="100%"/></td>
+    <td width="25%"><img src="https://github.com/user-attachments/assets/322fb1a6-46cc-47ab-b42b-952b47a8c526" alt="View 2" width="100%"/></td>
+    <td width="25%"><img src="https://github.com/user-attachments/assets/12fb8876-a96b-4143-8a17-eb92754ac43a" alt="View 3" width="100%"/></td>
+    <td width="25%"><img src="https://github.com/user-attachments/assets/69cfbe63-f271-4014-a99e-2932f7f4fe2c" alt="View 4" width="100%"/></td>
+  </tr>
 </table>
 
 ---
