@@ -18,10 +18,13 @@ A user-friendly personal finance management tool designed to track expenditures,
 
 ---
 
-## Key Features
-- Transaction Logging: Effortlessly add, update, and remove income and expenditure records.
-- Categorized Budgeting: Group expenses into clear structural categories such as food, rent, utilities, and entertainment.
-- Monthly Summary Metrics: View real-time calculations of total income, overall spending balances, and remaining budget capacity.
+##Key Features
+- Transaction Logging: Effortlessly add, update, and remove expenditure records.
+- Categorized Budgeting: Group expenses into clear structural categories such as food, transport, bills, shopping, health, entertainment, and others.
+- Monthly Summary Metrics: View real-time calculations of overall spending balances, and remaining budget capacity.
+- Receipt Scanning: Automatically extract and add expense details directly from scanned or uploaded receipts.
+- Target Limits: Configure customized monthly budget constraints tailored by individual categories.
+- Comparative Analytics: Evaluate and compare current spending structures directly against previous month expenditures.
 - Intuitive Interface: Clean user experience designed for fast data entry and clear financial evaluation.
 
 ## Tech Stack & Architecture
